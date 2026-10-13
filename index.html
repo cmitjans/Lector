@@ -223,4 +223,164 @@ async function renderPage(n){
   try{await task.promise}catch(e){d.dataset.state='';delete renderTasks[n];return}
   delete renderTasks[n];
   if(d.dataset.state!=='busy')return;
-  d.innerHTML='';d.appendChild(c);d.dataset.st
+  d.innerHTML='';d.appendChild(c);d.dataset.state='done';
+}
+
+function trimFar(){
+  const keep=6*cols;
+  pages.forEach((d,i)=>{
+    if(d.dataset.state==='done'&&Math.abs(i+1-curPage)>keep){
+      d.innerHTML='<span class="pn">'+(i+1)+'</span>';d.dataset.state='';
+    }
+  });
+}
+
+function goTo(n,instant){
+  n=Math.max(1,Math.min(pdf.numPages,n|0));
+  const d=pages[n-1];if(!d)return;
+  window.scrollTo({top:d.offsetTop-50,behavior:instant?'auto':'smooth'});
+}
+
+function trackPage(){
+  if(!pages.length)return;
+  const mid=window.innerHeight*0.4;let best=1,bd=1e9;
+  for(const d of pages){const r=d.getBoundingClientRect();
+    if(r.bottom<0)continue; if(r.top>window.innerHeight)break;
+    const dist=(r.top<mid&&r.bottom>mid)?0:Math.min(Math.abs(r.top-mid),Math.abs(r.bottom-mid));
+    if(dist<bd){bd=dist;best=+d.dataset.n}}
+  if(best!==curPage){curPage=best;$('pgCur').textContent=best;
+    clearTimeout(saveT);saveT=setTimeout(()=>{if(docKey)store.set(docKey,{page:curPage,t:Date.now()})},600);}
+}
+let lastY=0;
+window.addEventListener('scroll',()=>{
+  trackPage();
+  const y=window.scrollY,dy=y-lastY;
+  if(y<40)document.body.classList.remove('hide');
+  else if(dy>8&&$('findSheet').hidden&&$('goSheet').hidden)document.body.classList.add('hide');
+  else if(dy<-24)document.body.classList.remove('hide');
+  if(Math.abs(dy)>8)lastY=y;
+},{passive:true});
+pagesEl.addEventListener('click',()=>{if(pdf)document.body.classList.toggle('hide')});
+(function(){
+  const el=document.documentElement;
+  if(!(document.fullscreenEnabled&&el.requestFullscreen))return;
+  $('fsBtn').hidden=false;
+  $('fsBtn').onclick=async()=>{
+    try{document.fullscreenElement?await document.exitFullscreen():await el.requestFullscreen()}catch(e){$('fsBtn').hidden=true}
+  };
+})();
+
+function setZoom(z){
+  if(!pdf)return;
+  const keep=curPage;
+  zoom=Math.max(.2,Math.min(4,Math.round(z*100)/100));
+  layout(keep);
+}
+const STEPS=[.2,.25,.33,.5,.67,.75,1,1.25,1.5,2,2.5,3,4];
+$('zIn').onclick=()=>setZoom(STEPS.find(s=>s>zoom+.01)||4);
+$('zOut').onclick=()=>setZoom([...STEPS].reverse().find(s=>s<zoom-.01)||.2);
+
+let pinch=null;
+const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+pagesEl.addEventListener('touchstart',e=>{
+  if(!pdf||e.touches.length!==2)return;
+  const r=pagesEl.getBoundingClientRect();
+  pinch={d:dist(e.touches),s:1,ox:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,oy:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};
+  pagesEl.style.transformOrigin=pinch.ox+'px '+pinch.oy+'px';
+},{passive:true});
+pagesEl.addEventListener('touchmove',e=>{
+  if(!pinch||e.touches.length!==2)return;
+  e.preventDefault();
+  pinch.s=Math.max(.2/zoom,Math.min(4/zoom,dist(e.touches)/pinch.d));
+  pagesEl.style.transform='scale('+pinch.s+')';
+},{passive:false});
+pagesEl.addEventListener('touchend',e=>{
+  if(!pinch||e.touches.length>=2)return;
+  const s=pinch.s;pinch=null;pagesEl.style.transform='';
+  if(Math.abs(s-1)>.05)setZoom(zoom*s);
+});
+$('zFit').onclick=()=>setZoom(1);
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(pdf&&Math.abs(Math.min(pagesEl.clientWidth-12,1100)-baseW)>30)layout(curPage)},250)});
+
+$('nightBtn').onclick=()=>{
+  const on=document.body.classList.toggle('night');
+  $('nightBtn').setAttribute('aria-pressed',String(on));
+  prefs.night=on;store.set('lector-prefs',prefs);
+};
+
+async function onPick(e){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  openData(new Uint8Array(await f.arrayBuffer()),f.name,f.size);
+  e.target.value='';
+}
+$('fileInput').addEventListener('change',onPick);
+
+$('pgBtn').onclick=()=>{if(!pdf)return;$('findSheet').hidden=true;$('goSheet').hidden=false;$('goInput').max=pdf.numPages;$('goInput').value='';$('goInput').placeholder='1 a '+pdf.numPages;$('goInput').focus()};
+$('goClose').onclick=()=>{$('goSheet').hidden=true};
+$('goForm').addEventListener('submit',e=>{e.preventDefault();const n=parseInt($('goInput').value,10);if(n){$('goSheet').hidden=true;goTo(n)}});
+
+$('findBtn').onclick=()=>{if(!pdf)return;$('goSheet').hidden=true;$('findSheet').hidden=false;$('findInput').focus()};
+$('findClose').onclick=()=>{$('findSheet').hidden=true;pages.forEach(p=>p.classList.remove('hit'))};
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let searchId=0;
+$('findForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const q=$('findInput').value.trim();if(!q)return;
+  const my=++searchId;const nq=norm(q);
+  const res=$('findResults');res.innerHTML='';
+  let found=0,hasText=false;
+  for(let i=1;i<=pdf.numPages;i++){
+    if(my!==searchId)return;
+    $('findStatus').textContent='Buscando… página '+i+' de '+pdf.numPages;
+    if(texts[i]===undefined){
+      const tc=await (await pdf.getPage(i)).getTextContent();
+      texts[i]=tc.items.map(t=>t.str+(t.hasEOL?' ':'')).join('').replace(/\s+/g,' ');
+    }
+    const t=texts[i];if(t.trim())hasText=true;
+    const idx=norm(t).indexOf(nq);
+    if(idx>-1){
+      found++;
+      const a=Math.max(0,idx-40),b=Math.min(t.length,idx+nq.length+60);
+      const snip=(a>0?'…':'')+esc(t.slice(a,idx))+'<mark>'+esc(t.slice(idx,idx+nq.length))+'</mark>'+esc(t.slice(idx+nq.length,b))+(b<t.length?'…':'');
+      const btn=document.createElement('button');btn.type='button';
+      btn.innerHTML='<span class="p">pág '+i+'</span><span class="t">'+snip+'</span>';
+      btn.onclick=()=>{pages.forEach(p=>p.classList.remove('hit'));pages[i-1].classList.add('hit');$('findSheet').hidden=true;goTo(i)};
+      res.appendChild(btn);
+    }
+  }
+  $('findStatus').textContent=found?('Aparece en '+found+(found===1?' página.':' páginas.')):
+    (hasText?'No se encontró «'+q+'» en el documento.':'Este PDF no tiene texto (parece escaneado), así que no se puede buscar.');
+});
+
+let installEvt=null;
+function showWelcome(){
+  document.body.classList.add('nodoc');
+  pagesEl.innerHTML='';pagesEl.appendChild($('welcomeTpl').content.cloneNode(true));
+  $('fileInput2').addEventListener('change',onPick);
+  if(installEvt)$('installBtn').hidden=false;
+  $('installBtn').onclick=async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$('installBtn').hidden=true};
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;const b=$('installBtn');if(b)b.hidden=false});
+
+async function openShared(){
+  try{
+    const c=await caches.open('lector-compartido');
+    const res=await c.match('archivo');if(!res)return;
+    const name=decodeURIComponent(res.headers.get('X-Nombre')||'documento.pdf');
+    const buf=new Uint8Array(await res.arrayBuffer());
+    await c.delete('archivo');
+    history.replaceState(null,'','./');
+    openData(buf,name,buf.length);
+  }catch(e){}
+}
+
+(async function(){
+  if(!window.pdfjsLib){pagesEl.innerHTML='<p class="empty">No se pudo cargar el lector. La primera vez necesita internet; conéctate y recarga.</p>';return}
+  showWelcome();
+  if('serviceWorker' in navigator){try{await navigator.serviceWorker.register('sw.js')}catch(e){}}
+  if(location.search.includes('compartido'))await openShared();
+})();
+</script>
+</body>
+</html>
