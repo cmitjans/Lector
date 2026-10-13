@@ -1,10 +1,13 @@
 // Guarda la app para usarla sin internet y recibe PDFs desde "Compartir".
-const VERSION = 'lector-v5';
+// La página se pide primero a internet, así los cambios llegan solos.
+const VERSION = 'lector-v6';
 const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 const APP = ['./', './manifest.webmanifest', './icono-192.png', './icono-512.png', CDN + 'pdf.min.js', CDN + 'pdf.worker.min.js'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(APP)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION)
+    .then(c => c.addAll(APP.map(u => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -33,6 +36,18 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (e.request.method !== 'GET') return;
+  if (e.request.mode === 'navigate') {
+    e.respondWith((async () => {
+      try {
+        const res = await fetch(e.request.url.split('?')[0], { cache: 'no-cache' });
+        if (res.ok) (await caches.open(VERSION)).put('./', res.clone());
+        return res;
+      } catch (err) {
+        return (await caches.match('./')) || Response.error();
+      }
+    })());
+    return;
+  }
   if (url.origin !== location.origin && !e.request.url.startsWith(CDN)) return;
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request))
