@@ -1,7 +1,7 @@
 // Guarda la app para usarla sin internet y recibe PDFs desde "Compartir".
 const VERSION = 'lector-v1';
 const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-const APP = ['./', './manifest.webmanifest', './icono.svg', CDN + 'pdf.min.js', CDN + 'pdf.worker.min.js'];
+const APP = ['./', './manifest.webmanifest', './icono-192.png', './icono-512.png', CDN + 'pdf.min.js', CDN + 'pdf.worker.min.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(APP)).then(() => self.skipWaiting()));
