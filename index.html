@@ -48,8 +48,11 @@ body.hide .dock{transform:translateY(110%)}
 .page canvas{display:block;width:100%;height:100%}
 .page .pn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--num);color:#9aa3ad;font-size:13px}
 .page.hit{outline:3px solid var(--hl);outline-offset:2px}
-body.night .page{background:#111}
-body.night .page canvas{filter:invert(.92) hue-rotate(180deg)}
+body.night .page{background:#000}
+body.night .page canvas{filter:invert(1) hue-rotate(180deg)}
+body:not(.nodoc){background:#fff}
+body.night:not(.nodoc){background:#000}
+body:not(.nodoc) .page{box-shadow:none}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--bar);border-top:1px solid var(--line);
   padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
 .dock .in{display:flex;align-items:center;gap:4px;width:100%;max-width:520px;justify-content:space-between}
