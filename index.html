@@ -289,9 +289,6 @@ pagesEl.addEventListener('click',()=>{
   if(!pdf||!tapOk||Date.now()-lastScrollT<250)return;
   document.body.classList.toggle('hide');
 });
-  if(Math.abs(dy)>8)lastY=y;
-},{passive:true});
-pagesEl.addEventListener('click',()=>{if(pdf)document.body.classList.toggle('hide')});
 (function(){
   const el=document.documentElement;
   if(!(document.fullscreenEnabled&&el.requestFullscreen))return;
