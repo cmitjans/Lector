@@ -279,6 +279,7 @@ let lastY=0,lastScrollT=0,tapOk=false;
 window.addEventListener('scroll',()=>{
   lastScrollT=Date.now();
   trackPage();
+  if(!resizing)readPos=currentPos();
   const y=window.scrollY,dy=y-lastY;
   if(dy>8&&$('findSheet').hidden&&$('goSheet').hidden)document.body.classList.add('hide');
   if(Math.abs(dy)>8)lastY=y;
@@ -298,14 +299,18 @@ pagesEl.addEventListener('click',()=>{
   };
 })();
 
-function setZoom(z){
+/* Posición de lectura: página actual y qué parte de ella está arriba */
+let readPos=null,resizing=false,posAtResize=null;
+function currentPos(){const d=pages[curPage-1];return d?{n:curPage,f:(window.scrollY+50-d.offsetTop)/d.offsetHeight}:null}
+function setZoom(z,pos){
   if(!pdf||!pages.length)return;
-  const keep=curPage,d=pages[keep-1];
-  const frac=(window.scrollY+50-d.offsetTop)/d.offsetHeight;
+  const p=pos||currentPos();
   zoom=Math.max(.2,Math.min(4,Math.round(z*100)/100));
   cancelRenders();
   sizePages();
-  window.scrollTo({top:d.offsetTop-50+frac*d.offsetHeight,behavior:'instant'});
+  const d=pages[p.n-1];
+  window.scrollTo({top:d.offsetTop-50+p.f*d.offsetHeight,behavior:'instant'});
+  readPos=p;
   renderNear();
 }
 const STEPS=[.2,.25,.33,.5,.67,.75,1,1.25,1.5,2,2.5,3,4];
@@ -332,7 +337,15 @@ pagesEl.addEventListener('touchend',e=>{
   if(Math.abs(s-1)>.05)setZoom(zoom*s);
 });
 $('zFit').onclick=()=>setZoom(1);
-let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(pdf&&Math.abs(Math.min(pagesEl.clientWidth-12,1100)-baseW)>30)setZoom(zoom)},250)});
+/* Al girar el teléfono se usa la posición guardada antes del giro */
+let rT;window.addEventListener('resize',()=>{
+  if(!pdf)return;
+  if(!resizing){resizing=true;posAtResize=readPos||currentPos()}
+  clearTimeout(rT);rT=setTimeout(()=>{
+    resizing=false;
+    if(Math.abs(Math.min(pagesEl.clientWidth-12,1100)-baseW)>30)setZoom(zoom,posAtResize);
+  },250);
+});
 
 $('nightBtn').onclick=()=>{
   const on=document.body.classList.toggle('night');
