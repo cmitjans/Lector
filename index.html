@@ -275,13 +275,20 @@ function trackPage(){
   if(best!==curPage){curPage=best;$('pgCur').textContent=best;
     clearTimeout(saveT);saveT=setTimeout(()=>{if(docKey)store.set(docKey,{page:curPage,t:Date.now()})},600);}
 }
-let lastY=0;
+let lastY=0,lastScrollT=0,tapOk=false;
 window.addEventListener('scroll',()=>{
+  lastScrollT=Date.now();
   trackPage();
   const y=window.scrollY,dy=y-lastY;
-  if(y<40)document.body.classList.remove('hide');
-  else if(dy>8&&$('findSheet').hidden&&$('goSheet').hidden)document.body.classList.add('hide');
-  else if(dy<-24)document.body.classList.remove('hide');
+  if(dy>8&&$('findSheet').hidden&&$('goSheet').hidden)document.body.classList.add('hide');
+  if(Math.abs(dy)>8)lastY=y;
+},{passive:true});
+/* Las barras solo aparecen con un toque, nunca al deslizar */
+pagesEl.addEventListener('pointerdown',()=>{tapOk=Date.now()-lastScrollT>200},{passive:true});
+pagesEl.addEventListener('click',()=>{
+  if(!pdf||!tapOk||Date.now()-lastScrollT<250)return;
+  document.body.classList.toggle('hide');
+});
   if(Math.abs(dy)>8)lastY=y;
 },{passive:true});
 pagesEl.addEventListener('click',()=>{if(pdf)document.body.classList.toggle('hide')});
