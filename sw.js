@@ -1,5 +1,5 @@
 // Guarda la app para usarla sin internet y recibe PDFs desde "Compartir".
-const VERSION = 'lector-v4';
+const VERSION = 'lector-v5';
 const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 const APP = ['./', './manifest.webmanifest', './icono-192.png', './icono-512.png', CDN + 'pdf.min.js', CDN + 'pdf.worker.min.js'];
 
