@@ -1,0 +1,19 @@
+{
+  "name": "Lector PDF",
+  "short_name": "Lector PDF",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dfe3e8",
+  "theme_color": "#1f5fbf",
+  "icons": [
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "share_target": {
+    "action": "./compartido",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": { "files": [ { "name": "pdf", "accept": ["application/pdf", ".pdf"] } ] }
+  }
+}
