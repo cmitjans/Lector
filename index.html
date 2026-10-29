@@ -80,12 +80,43 @@ body:not(.nodoc) .page{box-shadow:none}
 .status{font-size:13.5px;color:var(--muted);margin-top:8px}
 .empty{max-width:34ch;text-align:center;color:var(--muted);padding:60px 16px;line-height:1.5}
 body.nodoc .dock,body.nodoc #fileMeta{display:none}
-.welcome{max-width:30rem;padding:48px 16px 24px;display:flex;flex-direction:column;gap:14px;line-height:1.5}
-.welcome h1{font-size:24px;margin:0;text-wrap:balance}
-.welcome p{margin:0;color:var(--muted)}
-.welcome .open{align-self:flex-start;font-size:16px;padding:12px 18px}
-.welcome ol{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+/* Inicio: tarjeta para abrir, lista de recientes y consejos plegados */
+.home{width:100%;max-width:34rem;padding:20px 16px 32px;display:flex;flex-direction:column;gap:22px;line-height:1.45}
+.home .hello h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+.home .hello p{margin:0;color:var(--muted);font-size:14.5px}
+.pick{position:relative;display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px rgba(31,95,191,.25)}
+.pick:active{transform:scale(.99)}
+.pick .ico{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+.pick .ico svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pick .txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.pick b{font-size:17px}
+.pick small{font-size:13px;opacity:.85}
+.pick .chev{font-size:26px;line-height:1;opacity:.8}
+.pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.rhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.rhead h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:700}
+.rhead button{font-size:13px;color:var(--muted);padding:4px}
+.rlist{background:var(--bar);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ritem{display:flex;align-items:center;gap:12px;padding:10px 6px 10px 12px;border-top:1px solid var(--line)}
+.ritem:first-child{border-top:0}
+.ritem .go{flex:1;min-width:0;display:flex;align-items:center;gap:12px;text-align:left;padding:0}
+.ritem .go:active{opacity:.7}
+.thumb{width:44px;height:58px;flex:none;border-radius:6px;background:#fff center/cover no-repeat;box-shadow:var(--shadow);border:1px solid var(--line)}
+.ritem .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ritem .nm{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+.ritem .sub{font-size:12.5px;color:var(--muted)}
+.ritem .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;max-width:160px}
+.ritem .bar i{display:block;height:100%;background:var(--accent)}
+.ritem .rm{width:36px;height:36px;border-radius:10px;color:var(--muted);font-size:20px;flex:none}
+.ritem .rm:active{background:var(--line)}
+.rnote{font-size:12.5px;color:var(--muted);margin:8px 2px 0}
+.tips{color:var(--muted);font-size:14px}
+.tips summary{cursor:pointer;font-weight:600;color:var(--ink);padding:4px 0}
+.tips ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
 .install{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:10px 16px;font-weight:700;align-self:flex-start}
+body.nodoc .top .open{display:none}
+body.nodoc #pages{padding-top:calc(44px + env(safe-area-inset-top,0px))}
 </style>
 </head>
 <body class="nodoc">
@@ -93,24 +124,40 @@ body.nodoc .dock,body.nodoc #fileMeta{display:none}
 <header class="top">
   <div class="fname"><b id="fileName">Lector PDF</b><span id="fileMeta"></span></div>
   <button class="tb" id="fsBtn" type="button" aria-label="Pantalla completa" hidden><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-  <label class="open" for="fileInput">
+  <button class="open" id="homeBtn" type="button">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>
-    Abrir PDF<input id="fileInput" type="file" accept="application/pdf,.pdf">
-  </label>
+    Abrir
+  </button>
 </header>
 <div class="resume" id="resume" hidden><span id="resumeText"></span><button id="resumeGo" type="button">Seguir leyendo</button><button id="resumeNo" type="button" style="color:var(--muted)">Desde el inicio</button></div>
 <main id="pages"></main>
 <template id="welcomeTpl">
-  <section class="welcome">
-    <h1>Abre un PDF para empezar</h1>
-    <p>Tus archivos se leen solo en este teléfono. La app no sube nada a internet, no tiene anuncios y no pide permisos.</p>
-    <label class="open" for="fileInput2">Elegir un PDF<input id="fileInput2" type="file" accept="application/pdf,.pdf"></label>
+  <section class="home">
+    <div class="hello">
+      <h1>¿Qué quieres leer?</h1>
+      <p>Sin anuncios ni permisos. Tus archivos no salen de este teléfono.</p>
+    </div>
+    <label class="pick" for="fileInput2">
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3 3 3-3"/></svg></span>
+      <span class="txt"><b>Abrir un PDF</b><small>Desde tus archivos o descargas</small></span>
+      <span class="chev" aria-hidden="true">›</span>
+      <input id="fileInput2" type="file" accept="application/pdf,.pdf">
+    </label>
+    <section id="recentSec" hidden>
+      <div class="rhead"><h2>Recientes</h2><button id="recentClear" type="button">Borrar todo</button></div>
+      <div class="rlist" id="recentList"></div>
+      <p class="rnote">Se guarda una copia de los últimos PDF solo en este teléfono, para abrirlos de nuevo en un toque.</p>
+    </section>
     <button class="install" id="installBtn" type="button" hidden>Instalar como app</button>
-    <ol>
-      <li>Desde el gestor de archivos o WhatsApp, usa <b>Compartir → Lector PDF</b> para abrir un PDF aquí directamente.</li>
-      <li>Recuerda la página donde quedaste en cada archivo.</li>
-      <li>Funciona sin internet una vez instalada.</li>
-    </ol>
+    <details class="tips">
+      <summary>Consejos</summary>
+      <ul>
+        <li>Desde WhatsApp o el gestor de archivos, usa <b>Compartir → Lector PDF</b> para abrir un PDF aquí directamente.</li>
+        <li>Recuerda la página donde quedaste en cada archivo.</li>
+        <li>Toca la página para mostrar u ocultar las barras. Pellizca para hacer zoom.</li>
+        <li>Funciona sin internet una vez instalada.</li>
+      </ul>
+    </details>
   </section>
 </template>
 
@@ -151,9 +198,87 @@ const pagesEl=$('pages');
 const prefs=store.get('lector-prefs')||{};
 if(prefs.night){document.body.classList.add('night');$('nightBtn').setAttribute('aria-pressed','true')}
 
+/* ---------- Recientes: copia de los últimos PDF en el almacenamiento del navegador ---------- */
+const MAX_RECIENTES=10, MAX_BYTES=200*1048576, MAX_ARCHIVO=80*1048576;
+let dbP=null;
+function db(){return dbP||(dbP=new Promise((res,rej)=>{
+  const r=indexedDB.open('lector',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('recientes',{keyPath:'id'});
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+}))}
+async function idb(mode,fn){
+  const d=await db();
+  return new Promise((res,rej)=>{
+    const t=d.transaction('recientes',mode),req=fn(t.objectStore('recientes'));
+    t.oncomplete=()=>res(req&&req.result);t.onerror=()=>rej(t.error);
+  });
+}
+const idbAll=()=>idb('readonly',s=>s.getAll()).catch(()=>[]);
+const idbGet=id=>idb('readonly',s=>s.get(id)).catch(()=>null);
+const idbPut=r=>idb('readwrite',s=>s.put(r));
+const idbDel=id=>idb('readwrite',s=>s.delete(id)).catch(()=>{});
+
+async function guardarReciente(blob,name,size,numPages){
+  if(size>MAX_ARCHIVO)return;
+  const id=name+':'+size;
+  try{
+    const prev=await idbGet(id);
+    await idbPut({id,name,size,n:numPages,t:Date.now(),blob,thumb:prev?prev.thumb:null});
+    // Conservar los más recientes dentro del límite de cantidad y espacio
+    const all=(await idbAll()).sort((a,b)=>b.t-a.t);let total=0;
+    for(let i=0;i<all.length;i++){total+=all[i].size;if(i>=MAX_RECIENTES||total>MAX_BYTES)await idbDel(all[i].id)}
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+  }catch(e){}
+}
+async function guardarMiniatura(id){
+  try{
+    const page=await pdf.getPage(1),v=page.getViewport({scale:1}),sc=120/v.width;
+    const c=document.createElement('canvas');c.width=120;c.height=Math.round(v.height*sc);
+    await page.render({canvasContext:c.getContext('2d'),viewport:page.getViewport({scale:sc})}).promise;
+    const thumb=c.toDataURL('image/jpeg',.7);
+    const r=await idbGet(id);if(r){r.thumb=thumb;await idbPut(r)}
+  }catch(e){}
+}
+function hace(t){
+  const m=Math.round((Date.now()-t)/60000);
+  if(m<1)return 'recién';if(m<60)return 'hace '+m+' min';
+  const h=Math.round(m/60);if(h<24)return 'hace '+h+' h';
+  const d=Math.round(h/24);if(d<2)return 'ayer';if(d<30)return 'hace '+d+' días';
+  return new Date(t).toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+}
+async function mostrarRecientes(){
+  const sec=$('recentSec');if(!sec)return;
+  const all=(await idbAll()).sort((a,b)=>b.t-a.t);
+  sec.hidden=!all.length;
+  const list=$('recentList');list.innerHTML='';
+  for(const r of all){
+    const pos=store.get('lector-pos:'+r.id),pg=pos&&pos.page||1;
+    const row=document.createElement('div');row.className='ritem';
+    row.innerHTML='<button class="go" type="button"><span class="thumb"></span><span class="meta"><span class="nm"></span>'+
+      '<span class="sub"></span><span class="bar"><i></i></span></span></button><button class="rm" type="button" aria-label="Quitar de recientes">×</button>';
+    if(r.thumb)row.querySelector('.thumb').style.backgroundImage='url('+r.thumb+')';
+    row.querySelector('.nm').textContent=r.name.replace(/\.pdf$/i,'');
+    row.querySelector('.sub').textContent=(r.n?'Pág. '+pg+' de '+r.n+' · ':'')+hace(r.t)+' · '+fmtSize(r.size);
+    if(r.n)row.querySelector('.bar i').style.width=Math.round(100*pg/r.n)+'%';else row.querySelector('.bar').hidden=true;
+    row.querySelector('.go').onclick=()=>abrirReciente(r.id);
+    row.querySelector('.rm').onclick=async()=>{await idbDel(r.id);mostrarRecientes()};
+    list.appendChild(row);
+  }
+  $('recentClear').onclick=async()=>{
+    if(!confirm('¿Quitar todos los PDF de recientes? Los archivos originales no se borran.'))return;
+    for(const r of all)await idbDel(r.id);
+    mostrarRecientes();
+  };
+}
+async function abrirReciente(id){
+  const r=await idbGet(id);if(!r){mostrarRecientes();return}
+  const pos=store.get('lector-pos:'+id);
+  abrirArchivo(r.blob,r.name,r.size,pos&&pos.page);
+}
+
 function fmtSize(b){return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'}
 
-async function openData(data,name,size){
+async function openData(data,name,size,startPage){
   if(pdf){try{pdf.destroy()}catch(e){}}
   pagesEl.innerHTML='<p class="empty">Abriendo…</p>';
   $('resume').hidden=true;texts=[];renderTasks={};
@@ -161,7 +286,8 @@ async function openData(data,name,size){
     pdf=await pdfjsLib.getDocument({data,isEvalSupported:false}).promise;
   }catch(e){
     pagesEl.innerHTML='<p class="empty">No se pudo abrir este archivo. Puede estar dañado o protegido con contraseña.</p>';
-    return;
+    pdf=null;
+    return false;
   }
   document.body.classList.remove('nodoc');document.title=name+' · Lector PDF';
   docKey='lector-pos:'+name+':'+size;
@@ -170,6 +296,9 @@ async function openData(data,name,size){
   $('pgTot').textContent=pdf.numPages;
   zoom=1;curPage=1;$('pgCur').textContent=1;
   await build();
+  if(!history.state||!history.state.doc)history.pushState({doc:true},'');
+  window.scrollTo({top:0,behavior:'auto'});
+  if(startPage>1&&startPage<=pdf.numPages){goTo(startPage,true);return true}
   const saved=store.get(docKey);
   if(saved&&saved.page>1&&saved.page<=pdf.numPages){
     $('resumeText').textContent='La última vez quedaste en la página '+saved.page+'.';
@@ -177,8 +306,27 @@ async function openData(data,name,size){
     $('resumeGo').onclick=()=>{$('resume').hidden=true;goTo(saved.page)};
     $('resumeNo').onclick=()=>{$('resume').hidden=true};
   }
-  window.scrollTo({top:0,behavior:'auto'});
+  return true;
 }
+/* Abre un archivo (Blob) y, si se pudo, lo guarda en recientes */
+async function abrirArchivo(blob,name,size,startPage){
+  const ok=await openData(new Uint8Array(await blob.arrayBuffer()),name,size,startPage);
+  if(!ok)return;
+  await guardarReciente(blob,name,size,pdf.numPages);
+  guardarMiniatura(name+':'+size);
+}
+/* Cierra el documento y vuelve al inicio */
+function cerrarDoc(){
+  if(observer)observer.disconnect();
+  cancelRenders();
+  if(pdf){try{pdf.destroy()}catch(e){}}
+  pdf=null;pages=[];docKey=null;texts=[];
+  $('resume').hidden=true;$('findSheet').hidden=true;$('goSheet').hidden=true;
+  document.body.classList.remove('hide');
+  document.title='Lector PDF';$('fileName').textContent='Lector PDF';$('fileMeta').textContent='';
+  showWelcome();window.scrollTo(0,0);
+}
+window.addEventListener('popstate',()=>{if(pdf)cerrarDoc()});
   async function build(){
   if(observer)observer.disconnect();
   cancelRenders();
@@ -355,10 +503,10 @@ $('nightBtn').onclick=()=>{
 
 async function onPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
-  openData(new Uint8Array(await f.arrayBuffer()),f.name,f.size);
   e.target.value='';
+  abrirArchivo(f,f.name,f.size);
 }
-$('fileInput').addEventListener('change',onPick);
+$('homeBtn').onclick=()=>{if(history.state&&history.state.doc)history.back();else cerrarDoc()};
 
 $('pgBtn').onclick=()=>{if(!pdf)return;$('findSheet').hidden=true;$('goSheet').hidden=false;$('goInput').max=pdf.numPages;$('goInput').value='';$('goInput').placeholder='1 a '+pdf.numPages;$('goInput').focus()};
 $('goClose').onclick=()=>{$('goSheet').hidden=true};
@@ -404,6 +552,7 @@ function showWelcome(){
   pagesEl.innerHTML='';pagesEl.appendChild($('welcomeTpl').content.cloneNode(true));
   $('fileInput2').addEventListener('change',onPick);
   if(installEvt)$('installBtn').hidden=false;
+  mostrarRecientes();
   $('installBtn').onclick=async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$('installBtn').hidden=true};
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;const b=$('installBtn');if(b)b.hidden=false});
@@ -413,10 +562,10 @@ async function openShared(){
     const c=await caches.open('lector-compartido');
     const res=await c.match('archivo');if(!res)return;
     const name=decodeURIComponent(res.headers.get('X-Nombre')||'documento.pdf');
-    const buf=new Uint8Array(await res.arrayBuffer());
+    const blob=await res.blob();
     await c.delete('archivo');
     history.replaceState(null,'','./');
-    openData(buf,name,buf.length);
+    abrirArchivo(blob,name,blob.size);
   }catch(e){}
 }
 
